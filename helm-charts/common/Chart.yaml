@@ -1,0 +1,8 @@
+apiVersion: v2
+name: common
+description: Common library chart for Community application
+type: library
+version: 0.1.0
+maintainers:
+  - name: DevSecOps Team
+    email: devsecops@example.com

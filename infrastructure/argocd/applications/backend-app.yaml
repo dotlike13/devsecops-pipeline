@@ -1,0 +1,77 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backend-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/devsecops-community/community-backend.git
+    targetRevision: dev
+    path: helm-charts
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: community-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backend-stg
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/devsecops-community/community-backend.git
+    targetRevision: stg
+    path: helm-charts
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: community-stg
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backend-prod
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/devsecops-community/community-backend.git
+    targetRevision: prod
+    path: helm-charts
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: community-prod
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

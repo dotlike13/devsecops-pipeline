@@ -1,0 +1,39 @@
+# Trivy 구성 파일
+# 취약점 스캔 설정
+vulnerability:
+  type:
+    - os
+    - library
+  severity:
+    - CRITICAL
+    - HIGH
+    - MEDIUM
+  ignore-unfixed: true
+
+# 비밀 스캔 설정
+secret:
+  # 비밀 스캔 활성화
+  enable: true
+  # 비밀 스캔에서 제외할 파일 패턴
+  exclude-path:
+    - node_modules
+    - .git
+    - coverage
+
+# 설정 스캔 설정
+config:
+  # 설정 스캔 활성화
+  enable: true
+  # 스캔할 파일 패턴
+  include-path:
+    - Dockerfile
+    - .github/workflows
+
+# 출력 형식 설정
+format: sarif
+output: trivy-results.sarif
+
+# 캐시 설정
+cache:
+  clear: false
+  dir: .trivy-cache

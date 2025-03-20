@@ -1,0 +1,94 @@
+# 백엔드 애플리케이션 기본 설정값
+replicaCount: 1
+
+image:
+  repository: harbor.local/community/backend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  hosts:
+    - host: backend.community.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# 환경 변수 설정
+env:
+  NODE_ENV: production
+  PORT: 8080
+  MONGODB_URI: mongodb://mongodb-service:27017/community
+  JWT_SECRET: ${JWT_SECRET}
+  CORS_ORIGIN: http://frontend-service
+  LOG_LEVEL: error
+  ENABLE_SWAGGER: "false"
+
+# 리소스 요청 및 제한 설정
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+# MongoDB 의존성 설정
+mongodb:
+  enabled: true
+  auth:
+    enabled: false
+  persistence:
+    enabled: true
+    size: 1Gi

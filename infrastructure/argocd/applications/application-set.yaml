@@ -1,0 +1,63 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: community-apps
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - name: frontend
+        repoURL: https://github.com/devsecops-community/community-frontend.git
+        env: dev
+        namespace: community-dev
+        prune: "true"
+      - name: frontend
+        repoURL: https://github.com/devsecops-community/community-frontend.git
+        env: stg
+        namespace: community-stg
+        prune: "true"
+      - name: frontend
+        repoURL: https://github.com/devsecops-community/community-frontend.git
+        env: prod
+        namespace: community-prod
+        prune: "false"
+      - name: backend
+        repoURL: https://github.com/devsecops-community/community-backend.git
+        env: dev
+        namespace: community-dev
+        prune: "true"
+      - name: backend
+        repoURL: https://github.com/devsecops-community/community-backend.git
+        env: stg
+        namespace: community-stg
+        prune: "true"
+      - name: backend
+        repoURL: https://github.com/devsecops-community/community-backend.git
+        env: prod
+        namespace: community-prod
+        prune: "false"
+  template:
+    metadata:
+      name: '{{name}}-{{env}}'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: '{{repoURL}}'
+        targetRevision: '{{env}}'
+        path: helm-charts
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: '{{prune}}'
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas

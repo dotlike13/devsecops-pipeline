@@ -1,0 +1,56 @@
+name: DAST with OWASP ZAP
+
+on:
+  workflow_run:
+    workflows: ["Backend CI Pipeline"]
+    types:
+      - completed
+    branches: [dev, stg]
+
+jobs:
+  zap-scan:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Wait for deployment to complete
+      run: |
+        echo "Waiting for deployment to complete..."
+        sleep 60  # 배포 완료를 위한 대기 시간
+    
+    - name: Get deployment URL
+      id: get-url
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+          echo "url=http://community-backend-dev.example.com" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.ref }}" == "refs/heads/stg" ]]; then
+          echo "url=http://community-backend-stg.example.com" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: ZAP Scan
+      uses: zaproxy/action-baseline@v0.7.0
+      with:
+        target: ${{ steps.get-url.outputs.url }}
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a'
+    
+    - name: Upload ZAP Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: zap-scan-report
+        path: report.html
+    
+    - name: Notify on vulnerabilities
+      if: ${{ failure() }}
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: 'DAST Scan Failed: Security vulnerabilities detected',
+            body: 'OWASP ZAP scan detected security vulnerabilities. Please check the scan report.'
+          })

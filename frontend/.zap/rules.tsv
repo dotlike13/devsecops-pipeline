@@ -1,0 +1,34 @@
+# ZAP 규칙 파일
+# 형식: <plugin_id>\t<PASS|WARN|FAIL|IGNORE>\t<note>
+
+# 정보 수집 관련 규칙
+10096	WARN	정보 노출 - 서버 기술 정보가 노출되었습니다
+10038	WARN	서버 헤더 정보가 노출되었습니다
+10098	WARN	Cross-Domain JavaScript 소스 파일 포함
+
+# 보안 헤더 관련 규칙
+10035	WARN	Strict-Transport-Security 헤더가 없습니다
+10036	WARN	X-Content-Type-Options 헤더가 없습니다
+10037	WARN	X-Frame-Options 헤더가 없습니다
+10055	WARN	CSP 헤더가 없습니다
+
+# 인증 및 세션 관련 규칙
+10202	FAIL	쿠키에 Secure 플래그가 없습니다
+10010	FAIL	쿠키에 HttpOnly 플래그가 없습니다
+10054	FAIL	쿠키에 SameSite 속성이 없습니다
+
+# 입력 검증 관련 규칙
+40012	FAIL	Cross Site Scripting (반영형)
+40014	FAIL	Cross Site Scripting (영구형)
+40016	FAIL	Cross Site Scripting (DOM 기반)
+40018	FAIL	SQL Injection
+90022	FAIL	Application Error Disclosure
+
+# 기타 규칙
+10020	IGNORE	X-Forwarded-For 헤더 주입
+10021	IGNORE	X-Forwarded-Host 헤더 주입
+10024	IGNORE	정보 노출 - 민감한 정보
+10028	IGNORE	Open Redirect
+10095	IGNORE	백업 파일 노출
+10105	IGNORE	Weak Authentication Method
+10202	IGNORE	Absence of Anti-CSRF Tokens

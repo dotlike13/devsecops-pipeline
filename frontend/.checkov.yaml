@@ -1,0 +1,23 @@
+# Checkov 구성 파일
+# 스캔에서 제외할 항목 설정
+skip_check:
+  - CKV_DOCKER_2  # 최신 태그 대신 특정 버전 사용 권장 체크 건너뛰기
+  - CKV_DOCKER_3  # HEALTHCHECK 지시문 사용 권장 체크 건너뛰기
+
+# 스캔 대상 디렉토리 설정
+directory:
+  - .
+
+# 출력 형식 설정
+output:
+  - cli
+  - sarif
+
+# 심각도 수준 설정
+severity: MEDIUM
+
+# 프레임워크 설정
+framework:
+  - dockerfile
+  - kubernetes
+  - secrets
