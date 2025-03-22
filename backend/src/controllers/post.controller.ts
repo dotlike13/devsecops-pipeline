@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
-import Post from '../models/Post';
+import Post, { IPost } from '../models/Post';
 import User from '../models/User';
+import { AuthRequest } from '../middleware/auth';
 
 // 모든 게시물 조회
-export const getPosts = async (req: Request, res: Response) => {
+export const getPosts = async (req: Request, res: Response): Promise<void> => {
   try {
     const posts = await Post.find()
       .sort({ createdAt: -1 })
@@ -17,6 +18,9 @@ export const getPosts = async (req: Request, res: Response) => {
         }
       });
 
+    // 응답 데이터 로깅 추가
+    console.log('Posts response:', JSON.stringify(posts, null, 2));
+
     res.status(200).json(posts);
   } catch (error) {
     console.error('Get posts error:', error);
@@ -25,7 +29,7 @@ export const getPosts = async (req: Request, res: Response) => {
 };
 
 // 특정 게시물 조회
-export const getPostById = async (req: Request, res: Response) => {
+export const getPostById = async (req: Request, res: Response): Promise<void> => {
   try {
     const post = await Post.findById(req.params.id)
       .populate('author', 'username')
@@ -39,7 +43,8 @@ export const getPostById = async (req: Request, res: Response) => {
       });
 
     if (!post) {
-      return res.status(404).json({ message: '게시물을 찾을 수 없습니다.' });
+      res.status(404).json({ message: '게시물을 찾을 수 없습니다.' });
+      return;
     }
 
     res.status(200).json(post);
@@ -50,15 +55,18 @@ export const getPostById = async (req: Request, res: Response) => {
 };
 
 // 게시물 생성
-export const createPost = async (req: Request, res: Response) => {
+export const createPost = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { title, content } = req.body;
-    const user = (req as any).user;
+    if (!req.user) {
+      res.status(401).json({ message: '인증이 필요합니다.' });
+      return;
+    }
 
     const post = new Post({
       title,
       content,
-      author: user.id
+      author: req.user.id
     });
 
     await post.save();
@@ -74,20 +82,25 @@ export const createPost = async (req: Request, res: Response) => {
 };
 
 // 게시물 수정
-export const updatePost = async (req: Request, res: Response) => {
+export const updatePost = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { title, content } = req.body;
-    const user = (req as any).user;
+    if (!req.user) {
+      res.status(401).json({ message: '인증이 필요합니다.' });
+      return;
+    }
 
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ message: '게시물을 찾을 수 없습니다.' });
+      res.status(404).json({ message: '게시물을 찾을 수 없습니다.' });
+      return;
     }
 
     // 작성자 확인
-    if (post.author.toString() !== user.id) {
-      return res.status(403).json({ message: '게시물을 수정할 권한이 없습니다.' });
+    if (post.author.toString() !== req.user.id) {
+      res.status(403).json({ message: '게시물을 수정할 권한이 없습니다.' });
+      return;
     }
 
     post.title = title || post.title;
@@ -106,22 +119,27 @@ export const updatePost = async (req: Request, res: Response) => {
 };
 
 // 게시물 삭제
-export const deletePost = async (req: Request, res: Response) => {
+export const deletePost = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
+    if (!req.user) {
+      res.status(401).json({ message: '인증이 필요합니다.' });
+      return;
+    }
 
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({ message: '게시물을 찾을 수 없습니다.' });
+      res.status(404).json({ message: '게시물을 찾을 수 없습니다.' });
+      return;
     }
 
     // 작성자 확인
-    if (post.author.toString() !== user.id) {
-      return res.status(403).json({ message: '게시물을 삭제할 권한이 없습니다.' });
+    if (post.author.toString() !== req.user.id) {
+      res.status(403).json({ message: '게시물을 삭제할 권한이 없습니다.' });
+      return;
     }
 
-    await post.remove();
+    await Post.deleteOne({ _id: post._id });
 
     res.status(200).json({ message: '게시물이 삭제되었습니다.' });
   } catch (error) {
@@ -131,32 +149,48 @@ export const deletePost = async (req: Request, res: Response) => {
 };
 
 // 게시물 투표
-export const votePost = async (req: Request, res: Response) => {
+export const votePost = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { vote } = req.body;  // 'up' 또는 'down'
-    const user = (req as any).user;
-
-    const post = await Post.findById(req.params.id);
-
-    if (!post) {
-      return res.status(404).json({ message: '게시물을 찾을 수 없습니다.' });
+    const { id } = req.params;
+    const { voteType } = req.body;  // 'upvote' 또는 'downvote'
+    
+    if (!req.user) {
+      res.status(401).json({ message: '인증이 필요합니다.' });
+      return;
     }
 
-    if (vote === 'up') {
-      post.upvotes += 1;
-    } else if (vote === 'down') {
-      post.downvotes += 1;
+    const post = await Post.findById(id);
+
+    if (!post) {
+      res.status(404).json({ message: '게시물을 찾을 수 없습니다.' });
+      return;
+    }
+
+    // 투표 업데이트
+    if (voteType === 'upvote') {
+      post.upvotes = (post.upvotes || 0) + 1;
+    } else if (voteType === 'downvote') {
+      post.downvotes = (post.downvotes || 0) + 1;
     } else {
-      return res.status(400).json({ message: '유효하지 않은 투표 유형입니다.' });
+      res.status(400).json({ message: '유효하지 않은 투표 유형입니다.' });
+      return;
     }
 
     await post.save();
 
-    res.status(200).json({
-      message: '투표가 반영되었습니다.',
-      upvotes: post.upvotes,
-      downvotes: post.downvotes
-    });
+    // 업데이트된 게시물 반환
+    const updatedPost = await Post.findById(id)
+      .populate('author', 'username')
+      .populate({
+        path: 'comments',
+        select: 'content author createdAt',
+        populate: {
+          path: 'author',
+          select: 'username'
+        }
+      });
+
+    res.status(200).json(updatedPost);
   } catch (error) {
     console.error('Vote post error:', error);
     res.status(500).json({ message: '투표 중 오류가 발생했습니다.' });

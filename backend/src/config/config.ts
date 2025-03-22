@@ -3,7 +3,17 @@ import dotenv from 'dotenv';
 // 환경 변수 로드
 dotenv.config();
 
-const config = {
+interface Config {
+  port: number | string;
+  nodeEnv: string;
+  mongoURI: string;
+  jwtSecret: string;
+  jwtExpire: '24h' | '7d' | '30d';
+  logFormat: string;
+  corsOrigin: string;
+}
+
+const config: Config = {
   // 서버 설정
   port: process.env.PORT || 4000,
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -13,7 +23,7 @@ const config = {
   
   // JWT 설정
   jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret',
-  jwtExpire: process.env.JWT_EXPIRE || '24h',
+  jwtExpire: process.env.JWT_EXPIRE as '24h' | '7d' | '30d' || '24h',
   
   // 로그 설정
   logFormat: process.env.LOG_FORMAT || 'dev',

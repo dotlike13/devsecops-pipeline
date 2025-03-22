@@ -1,12 +1,14 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions, Secret } from 'jsonwebtoken';
 import config from '../config/config';
 
 export interface IUser extends Document {
+  _id: Types.ObjectId;
   username: string;
   email: string;
   password: string;
+  role: string;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -36,6 +38,11 @@ const UserSchema: Schema = new Schema({
     required: [true, '비밀번호는 필수입니다.'],
     minlength: [6, '비밀번호는 최소 6자 이상이어야 합니다.'],
     select: false
+  },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
   },
   createdAt: {
     type: Date,
@@ -69,12 +76,22 @@ UserSchema.methods.comparePassword = async function(candidatePassword: string): 
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// JWT 토큰 생성 메서드
+// JWT 토큰 생성 메서드 수정
 UserSchema.methods.generateAuthToken = function(): string {
+  const payload = {
+    id: this._id,
+    username: this.username
+  };
+
+  // 만료 시간을 직접 지정
+  const options = {
+    expiresIn: '24h' // 리터럴 타입으로 직접 지정
+  } satisfies SignOptions;
+
   return jwt.sign(
-    { id: this._id, username: this.username },
-    config.jwtSecret,
-    { expiresIn: config.jwtExpire }
+    payload,
+    config.jwtSecret as Secret,
+    options
   );
 };
 

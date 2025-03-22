@@ -1,9 +1,10 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IComment extends Document {
+  _id: Types.ObjectId;
   content: string;
-  author: mongoose.Types.ObjectId;
-  post: mongoose.Types.ObjectId;
+  author: Types.ObjectId;
+  post: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,12 +17,12 @@ const CommentSchema: Schema = new Schema({
     maxlength: [500, '댓글은 최대 500자까지 가능합니다.']
   },
   author: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
   post: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'Post',
     required: true
   },

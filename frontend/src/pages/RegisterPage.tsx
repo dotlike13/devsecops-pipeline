@@ -1,121 +1,117 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
-import { register } from '../services/authSlice';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { register } from '../services/authSlice.ts';
 
 const RegisterPage: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { status, error, isAuthenticated } = useSelector((state: any) => state.auth);
+  const dispatch = useDispatch();
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // 이미 로그인되어 있으면 홈페이지로 리다이렉트
-    if (isAuthenticated) {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate]);
-
-  const validatePasswords = () => {
-    if (password !== confirmPassword) {
-      setPasswordError('비밀번호가 일치하지 않습니다.');
-      return false;
-    }
-    setPasswordError('');
-    return true;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!username.trim() || !email.trim() || !password.trim()) {
-      return;
-    }
+    setError(null);
 
-    if (!validatePasswords()) {
+    if (formData.password !== formData.confirmPassword) {
+      setError('비밀번호가 일치하지 않습니다.');
       return;
     }
 
     try {
-      await dispatch(register({ username, email, password }) as any);
+      const { confirmPassword, ...registerData } = formData;
+      await dispatch(register(registerData) as any);
       navigate('/login');
-    } catch (err) {
-      console.error('회원가입 실패:', err);
+    } catch (err: any) {
+      setError(err.message || '회원가입에 실패했습니다.');
     }
   };
 
   return (
-    <div className="register-page">
-      <h1>회원가입</h1>
-      
-      {error && <div className="error">{error}</div>}
-      
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="username">사용자 이름</label>
-          <input
-            type="text"
-            id="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="email">이메일</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="password">비밀번호</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="confirmPassword">비밀번호 확인</label>
-          <input
-            type="password"
-            id="confirmPassword"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-          {passwordError && <div className="error">{passwordError}</div>}
-        </div>
-        
-        <div className="form-actions">
-          <button 
-            type="submit" 
-            className="btn btn-primary"
-            disabled={status === 'loading'}
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-md mx-auto">
+        <h1 className="text-3xl font-bold mb-6">회원가입</h1>
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="username" className="block text-gray-700 mb-2">
+              아이디
+            </label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          <div>
+            <label htmlFor="email" className="block text-gray-700 mb-2">
+              이메일
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-gray-700 mb-2">
+              비밀번호
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          <div>
+            <label htmlFor="confirmPassword" className="block text-gray-700 mb-2">
+              비밀번호 확인
+            </label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
           >
-            {status === 'loading' ? '처리 중...' : '회원가입'}
+            회원가입
           </button>
-        </div>
-      </form>
-      
-      <div className="auth-links">
-        <p>
-          이미 계정이 있으신가요? <Link to="/login">로그인</Link>
-        </p>
+        </form>
       </div>
     </div>
   );

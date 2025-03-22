@@ -1,97 +1,74 @@
 import React, { useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchPostById, clearPostDetail } from '../services/postsSlice';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../store.ts';
+import { fetchPostById, deletePost } from '../services/postsSlice.ts';
 
 const PostDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { post, status, error } = useSelector((state: any) => state.posts);
-  const { isAuthenticated } = useSelector((state: any) => state.auth);
+  const { post, status, error } = useSelector((state: RootState) => state.posts);
+  const { user } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     if (id) {
       dispatch(fetchPostById(id) as any);
     }
+  }, [dispatch, id]);
 
-    // 컴포넌트 언마운트 시 상태 초기화
-    return () => {
-      dispatch(clearPostDetail());
-    };
-  }, [id, dispatch]);
+  const handleDelete = async () => {
+    if (window.confirm('정말로 이 게시물을 삭제하시겠습니까?')) {
+      try {
+        await dispatch(deletePost(id!) as any);
+        navigate('/');
+      } catch (err) {
+        console.error('게시물 삭제 실패:', err);
+      }
+    }
+  };
 
   if (status === 'loading') {
-    return <div className="loading">게시물을 불러오는 중...</div>;
+    return <div className="text-center py-8">로딩 중...</div>;
   }
 
-  if (status === 'failed') {
-    return <div className="error">오류: {error}</div>;
+  if (error) {
+    return <div className="text-center py-8 text-red-600">{error}</div>;
   }
 
   if (!post) {
-    return <div className="not-found">게시물을 찾을 수 없습니다.</div>;
+    return <div className="text-center py-8">게시물을 찾을 수 없습니다.</div>;
   }
 
   return (
-    <div className="post-detail-page">
-      <div className="post-header">
-        <h1>{post.title}</h1>
-        <div className="post-meta">
-          <span className="author">작성자: {post.author}</span>
-          <span className="date">
-            {new Date(post.createdAt).toLocaleDateString()}
-          </span>
+    <div className="container mx-auto px-4 py-8">
+      <article className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm p-8">
+        <h1 className="text-4xl font-bold mb-6 text-gray-900">{post.title}</h1>
+        <div className="flex items-center text-gray-600 mb-8">
+          <span className="font-medium">{post.author.username}</span>
+          <span className="mx-2">•</span>
+          <span>{new Date(post.createdAt).toLocaleDateString()}</span>
         </div>
-      </div>
-
-      <div className="post-content">
-        <p>{post.content}</p>
-      </div>
-
-      <div className="post-actions">
-        <div className="vote-buttons">
-          <button className="upvote">👍 {post.upvotes}</button>
-          <button className="downvote">👎 {post.downvotes}</button>
+        <div className="prose prose-lg max-w-none mb-8">
+          {post.content}
         </div>
-        <Link to="/" className="btn btn-secondary">
-          목록으로 돌아가기
-        </Link>
-      </div>
-
-      <div className="comments-section">
-        <h2>댓글 ({post.comments?.length || 0})</h2>
-        
-        {isAuthenticated ? (
-          <div className="comment-form">
-            <textarea placeholder="댓글을 입력하세요..."></textarea>
-            <button className="btn btn-primary">댓글 작성</button>
+        {user && user._id === post.author._id && (
+          <div className="flex space-x-4 mt-8 pt-8 border-t">
+            <button
+              onClick={() => navigate(`/posts/${post._id}/edit`)}
+              className="btn-primary"
+            >
+              수정
+            </button>
+            <button
+              onClick={handleDelete}
+              className="btn-secondary text-red-600 hover:bg-red-50"
+            >
+              삭제
+            </button>
           </div>
-        ) : (
-          <p>
-            <Link to="/login">로그인</Link>하여 댓글을 작성하세요.
-          </p>
         )}
-
-        <div className="comments-list">
-          {post.comments && post.comments.length > 0 ? (
-            post.comments.map((comment: any) => (
-              <div key={comment.id} className="comment">
-                <div className="comment-header">
-                  <span className="comment-author">{comment.author}</span>
-                  <span className="comment-date">
-                    {new Date(comment.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="comment-body">
-                  <p>{comment.content}</p>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p>아직 댓글이 없습니다.</p>
-          )}
-        </div>
-      </div>
+      </article>
     </div>
   );
 };

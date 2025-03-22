@@ -1,31 +1,32 @@
 import { Request, Response } from 'express';
-import User, { IUser } from '../models/User';
+import { AuthRequest } from '../middleware/auth';
+import User from '../models/User';
 
-// 사용자 등록
-export const register = async (req: Request, res: Response) => {
+// 회원가입
+export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username, email, password } = req.body;
 
     // 사용자 이름 중복 확인
     const existingUsername = await User.findOne({ username });
     if (existingUsername) {
-      return res.status(400).json({ message: '이미 사용 중인 사용자 이름입니다.' });
+      res.status(400).json({ message: '이미 사용 중인 사용자 이름입니다.' });
+      return;
     }
 
     // 이메일 중복 확인
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
-      return res.status(400).json({ message: '이미 사용 중인 이메일입니다.' });
+      res.status(400).json({ message: '이미 사용 중인 이메일입니다.' });
+      return;
     }
 
     // 새 사용자 생성
-    const user = new User({
+    const user = await User.create({
       username,
       email,
       password
     });
-
-    await user.save();
 
     res.status(201).json({
       message: '회원가입이 완료되었습니다.',
@@ -42,20 +43,22 @@ export const register = async (req: Request, res: Response) => {
 };
 
 // 로그인
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username, password } = req.body;
 
     // 사용자 찾기
     const user = await User.findOne({ username }).select('+password');
     if (!user) {
-      return res.status(401).json({ message: '사용자 이름 또는 비밀번호가 올바르지 않습니다.' });
+      res.status(401).json({ message: '사용자 이름 또는 비밀번호가 올바르지 않습니다.' });
+      return;
     }
 
     // 비밀번호 확인
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ message: '사용자 이름 또는 비밀번호가 올바르지 않습니다.' });
+      res.status(401).json({ message: '사용자 이름 또는 비밀번호가 올바르지 않습니다.' });
+      return;
     }
 
     // 토큰 생성
@@ -77,12 +80,13 @@ export const login = async (req: Request, res: Response) => {
 };
 
 // 현재 사용자 정보 조회
-export const getMe = async (req: Request, res: Response) => {
+export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const user = await User.findById((req as any).user.id);
+    const user = req.user;
     
     if (!user) {
-      return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+      res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+      return;
     }
 
     res.status(200).json({

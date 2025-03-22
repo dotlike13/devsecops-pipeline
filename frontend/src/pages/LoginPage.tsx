@@ -1,80 +1,85 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
-import { login } from '../services/authSlice';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { login } from '../services/authSlice.ts';
 
 const LoginPage: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { status, error, isAuthenticated } = useSelector((state: any) => state.auth);
+  const dispatch = useDispatch();
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+  });
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // 이미 로그인되어 있으면 홈페이지로 리다이렉트
-    if (isAuthenticated) {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate]);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!username.trim() || !password.trim()) {
-      return;
-    }
+    setError(null);
 
     try {
-      await dispatch(login({ username, password }) as any);
-    } catch (err) {
-      console.error('로그인 실패:', err);
+      await dispatch(login(formData) as any);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || '로그인에 실패했습니다.');
     }
   };
 
   return (
-    <div className="login-page">
-      <h1>로그인</h1>
-      
-      {error && <div className="error">{error}</div>}
-      
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="username">사용자 이름</label>
-          <input
-            type="text"
-            id="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            로그인
+          </h2>
         </div>
-        
-        <div className="form-group">
-          <label htmlFor="password">비밀번호</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        
-        <div className="form-actions">
-          <button 
-            type="submit" 
-            className="btn btn-primary"
-            disabled={status === 'loading'}
-          >
-            {status === 'loading' ? '로그인 중...' : '로그인'}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+            {error}
+          </div>
+        )}
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="rounded-md shadow-sm space-y-4">
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                아이디
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                className="input-field mt-1"
+                value={formData.username}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                비밀번호
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                className="input-field mt-1"
+                value={formData.password}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <button type="submit" className="btn-primary w-full">
+            로그인
           </button>
-        </div>
-      </form>
-      
-      <div className="auth-links">
-        <p>
-          계정이 없으신가요? <Link to="/register">회원가입</Link>
-        </p>
+        </form>
       </div>
     </div>
   );

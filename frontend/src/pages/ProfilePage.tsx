@@ -1,56 +1,35 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 
 const ProfilePage: React.FC = () => {
-  const { user } = useSelector((state: any) => state.auth);
+  const { user } = useSelector((state: RootState) => state.auth);
 
   if (!user) {
-    return <div className="loading">사용자 정보를 불러오는 중...</div>;
+    return <div className="text-center py-8">로그인이 필요합니다.</div>;
   }
 
   return (
-    <div className="profile-page">
-      <h1>사용자 프로필</h1>
-      
-      <div className="profile-card">
-        <div className="profile-header">
-          <div className="profile-avatar">
-            {/* 사용자 이니셜 표시 */}
-            <div className="avatar-placeholder">
-              {user.username.charAt(0).toUpperCase()}
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6">프로필</h1>
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="space-y-4">
+            <div>
+              <label className="text-gray-600">아이디</label>
+              <p className="text-xl">{user.username}</p>
+            </div>
+            <div>
+              <label className="text-gray-600">이메일</label>
+              <p className="text-xl">{user.email}</p>
+            </div>
+            <div>
+              <label className="text-gray-600">가입일</label>
+              <p className="text-xl">
+                {new Date(user.createdAt).toLocaleDateString()}
+              </p>
             </div>
           </div>
-          <div className="profile-info">
-            <h2>{user.username}</h2>
-            <p>{user.email}</p>
-          </div>
-        </div>
-        
-        <div className="profile-stats">
-          <div className="stat-item">
-            <span className="stat-value">0</span>
-            <span className="stat-label">게시물</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">0</span>
-            <span className="stat-label">댓글</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">0</span>
-            <span className="stat-label">좋아요</span>
-          </div>
-        </div>
-        
-        <div className="profile-actions">
-          <button className="btn btn-secondary">프로필 수정</button>
-          <button className="btn btn-secondary">비밀번호 변경</button>
-        </div>
-      </div>
-      
-      <div className="user-activity">
-        <h2>최근 활동</h2>
-        <div className="activity-empty">
-          <p>아직 활동 내역이 없습니다.</p>
         </div>
       </div>
     </div>

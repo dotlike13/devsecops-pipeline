@@ -1,16 +1,23 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { register, login, getMe } from '../controllers/auth.controller';
-import { auth } from '../middleware/auth';
+import { auth, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// 회원가입
-router.post('/register', register);
+// 타입이 지정된 에러 처리 미들웨어
+const handleAsync = (handler: (req: Request | AuthRequest, res: Response) => Promise<void>) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      await handler(req, res);
+    } catch (error) {
+      next(error);
+    }
+  };
+};
 
-// 로그인
-router.post('/login', login);
-
-// 현재 사용자 정보 조회 (인증 필요)
-router.get('/me', auth, getMe);
+// 라우트 정의
+router.post('/register', handleAsync(register));
+router.post('/login', handleAsync(login));
+router.get('/me', auth, handleAsync(getMe));
 
 export default router;

@@ -2,16 +2,11 @@ import React from 'react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="footer">
-      <div className="container">
-        <div className="footer-content">
-          <p>&copy; {new Date().getFullYear()} 커뮤니티 포털. All rights reserved.</p>
-          <div className="footer-links">
-            <a href="#">이용약관</a>
-            <a href="#">개인정보처리방침</a>
-            <a href="#">문의하기</a>
-          </div>
-        </div>
+    <footer className="bg-gray-100 mt-8">
+      <div className="container mx-auto px-4 py-6">
+        <p className="text-center text-gray-600">
+          © 2024 커뮤니티. All rights reserved.
+        </p>
       </div>
     </footer>
   );
